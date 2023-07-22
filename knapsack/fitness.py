@@ -31,9 +31,9 @@ def fitness(
     )
 
     # Apply weights to the normalized components
-    price_weight = 1.0
-    weight_weight = 1.0
-    usage_weight = 1.0
+    price_weight = 0.7
+    weight_weight = 0.7
+    usage_weight = 1.3
 
     # Calculate the weighted sum fitness score
     score = (
