@@ -1,35 +1,48 @@
 import random
 import json
 import tqdm
-from knapsack.initial_population import initial_population
-from knapsack.fitness import final_values, fitness
-from knapsack.crossover import crossover
+from .initial_population import initial_population
+from .fitness import fitness
+from .crossover import crossover
 
 
 def read_data(filename):
-    with open(filename, "r") as file:
-        data = json.load(file)
-    return data
+    try:
+        with open(filename, "r") as file:
+            data = json.load(file)
+        return data
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            "File not found. Please run generate_data.py to generate the data file."
+        )
 
 
-POPULATION_SIZE = 10
-GENERATIONS = 100000
-MUTATION_RATE = 0.00025
-DATA = read_data("data/data.json")
-MAX_BUDGET = 15000
-MAX_WEIGHT = 1500
-EARLY_STOP = 5000
-
-
-def main(
+def knapsack_algo(
     population_size: int,
     generations: int,
     mutation_rate: float,
     data: list[dict],
     max_budget: int,
     max_weight: int,
-    early_stop: int = EARLY_STOP,
+    early_stop: int = 5000,
 ):
+    """Main logic for the knapsack algo.
+
+    Args:
+        population_size (int): The size of the population.
+        generations (int): The number of generations to run.
+        mutation_rate (float): The mutation rate.
+        data (list[dict]): The data to use.
+        max_budget (int): The max budget.
+        max_weight (int): The max weight.
+        early_stop (int, optional): The number of generations to run before early stopping. Defaults to 5000.
+
+    Returns:
+        population[0] (list): The best pop from the final generation.
+        fitness (float): The fitness score of the best pop.
+    """
+
+    # Get the min and max values for the data to later normalize the pop values
     min_item_price = min(item["price"] for item in data)
     max_item_price = max(item["price"] for item in data)
     min_item_weight = min(item["weight"] for item in data)
@@ -37,6 +50,7 @@ def main(
     min_item_usage = min(item["usage"] for item in data)
     max_item_usage = max(item["usage"] for item in data)
 
+    # Create a dict of the min and max values for the data for the fitness function
     item_data = {
         "min_price": min_item_price,
         "max_price": max_item_price,
@@ -46,6 +60,7 @@ def main(
         "max_usage": max_item_usage,
     }
 
+    # Create and sort the initial population by fitness
     population = initial_population(population_size, len(data))
     population = sorted(
         population,
@@ -53,18 +68,24 @@ def main(
         reverse=True,
     )
 
+    # Get the top 20% of the population for the next generation
     top_range = int(len(population) * 0.2)
 
     top_pops = population[:top_range]
     early_stop_count = 0
 
-    for gen in tqdm.tqdm(range(generations)):
-        tqdm.tqdm.write(
-            f"Generation: {gen} Fitness: {fitness(population[0], max_budget, max_weight, data, item_data):.2f}"
-        )
+    for gen in tqdm.tqdm(range(generations), colour="red"):
+        if gen % 100 == 0:
+            tqdm.tqdm.write(
+                f"Generation: {gen} Fitness: {fitness(population[0], max_budget, max_weight, data, item_data):.2f}"
+            )
         next_population = top_pops.copy()
+
+        # top pop from the previous generation to check for early stopping
         top_pop_this_gen = next_population[0]
 
+        # Filling the rest of the new generation
+        # Parents are selected from the top 80% of the population
         while len(next_population) < len(population):
             parent1, parent2 = random.choices(
                 population[: (len(population) - top_range)], k=2
@@ -76,6 +97,8 @@ def main(
             key=lambda x: fitness(x, max_budget, max_weight, data, item_data),
             reverse=True,
         )
+
+        # Check for early stopping
         if top_pop_this_gen == population[0]:
             early_stop_count += 1
         else:
@@ -88,15 +111,6 @@ def main(
 
         top_pops = population[:top_range]
 
-    return population, fitness(population[0], max_budget, max_weight, data, item_data)
-
-
-if __name__ == "__main__":
-    result, result_fitness = main(
-        POPULATION_SIZE, GENERATIONS, MUTATION_RATE, DATA, MAX_BUDGET, MAX_WEIGHT
+    return population[0], fitness(
+        population[0], max_budget, max_weight, data, item_data
     )
-    final_values = final_values(result[0], DATA)
-    print(f"Fitness: {result_fitness}")
-    print(f"Budget: {final_values[0]} of {MAX_BUDGET}")
-    print(f"Weight: {final_values[1]} of {MAX_WEIGHT}")
-    print(f"Usage: {final_values[2]}")

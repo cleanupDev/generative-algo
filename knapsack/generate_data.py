@@ -2,7 +2,8 @@ import random
 import json
 import tqdm
 
-def generate_items(number_of_items: int) -> list[dict]:
+
+def _generate_items(number_of_items: int) -> list[dict]:
     items: list = []
     for i in tqdm.tqdm(range(number_of_items)):
         item = {}
@@ -14,13 +15,12 @@ def generate_items(number_of_items: int) -> list[dict]:
     return items
 
 
-def write_items_to_json_file(items: list[dict], filename: str) -> None:
+def _write_items_to_json_file(items: list[dict], filename: str) -> None:
     with open(filename, "w") as file:
         json.dump(items, file, indent=4, separators=(", ", ": "))
 
 
-
-if __name__ == "__main__":
-    items = generate_items(1000)
-    write_items_to_json_file(items, "data/data.json")
-    print('DONE')
+def generate_data(number_of_items: int, filename: str) -> None:
+    items = _generate_items(number_of_items)
+    _write_items_to_json_file(items, filename)
+    print("DONE")
