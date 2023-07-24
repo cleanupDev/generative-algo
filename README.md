@@ -1,5 +1,5 @@
-# generative-algo
+# genetic-algo
 
-A generative algo to solve the 'knapsack' problem.
+A genetic algo to solve the 'knapsack' problem.
 
 Simple implementation to solve the problem with one max value and two constraints.
